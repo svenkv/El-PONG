@@ -1,4 +1,4 @@
-# El-PONG
+# PONG DONG
 A shitty version of pong
 
-Go to text_game and open index.html to play
+go to https://svenkv.github.io/text_game/ to play
