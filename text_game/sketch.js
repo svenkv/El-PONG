@@ -63,7 +63,7 @@ function draw() {
       //END AI CODE
 
       balls[i].draw();
-      if(balls[i].x < 0){
+      if(balls[i].x < -50){
         score_1 += 1;
         if(b_add){
           addBall();
@@ -71,7 +71,7 @@ function draw() {
         balls.splice(i,1);
         balls.push(new Ball(width/2,random(0,height),random(-HALF_PI,HALF_PI)*7/10));
       }
-      if(balls[i].x > width){
+      if(balls[i].x > (width + 50)){
         score_2 += 1;
         if(b_add){
           addBall();
