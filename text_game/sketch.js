@@ -4,6 +4,9 @@ var score_1 = 0;
 var score_2 = 0;
 var frame;
 
+var b_add;
+var s_increase;
+
 var dist;
 
 var ai_p1;
@@ -37,13 +40,13 @@ function draw() {
       players[i].draw();
     }
     for (var i = 0; i < balls.length; i++) {
-      if (balls[i].y < 0 || balls[i].y > height) {
+      if ((balls[i].y - balls[i].d/2) < 0 || (balls[i].y + balls[i].d/2) > height) {
         balls[i].invert()
       }
       for (var u = 0; u < players.length; u++) {
         if (check(i,u) == true) {
           console.log("BOING");
-          balls[i].hit(players[u].y,players[u].h);
+          balls[i].hit(players[u].y,players[u].h, s_increase);
           console.log("Speed",balls[i].speed);
         }
       }
@@ -62,13 +65,17 @@ function draw() {
       balls[i].draw();
       if(balls[i].x < 0){
         score_1 += 1;
-        addBall();
+        if(b_add){
+          addBall();
+        }
         balls.splice(i,1);
         balls.push(new Ball(width/2,random(0,height),random(-HALF_PI,HALF_PI)*7/10));
       }
       if(balls[i].x > width){
         score_2 += 1;
-        addBall();
+        if(b_add){
+          addBall();
+        }
         balls.splice(i,1);
         balls.push(new Ball(width/2,random(0,height),random(-HALF_PI,HALF_PI)*7/10));
       }
@@ -90,11 +97,23 @@ function draw() {
     else {
       text("AI: OFF", width-50,50);
     }
-    text("Speeds:",width/2,20);
-    for (var i = 0; i < balls.length; i++){
-      text(balls[i].speed,width/2,40 + 20*i);
+    if (s_increase){
+      text("Speed increase: ON",width/2 - 70,10);
     }
-    stroke(255);
+    else {
+      text("Speed increase: OFF",width/2 - 70,10);
+    }
+    if (b_add){
+      text("Adding balls: ON",width/2 + 70,10);
+    }
+    else {
+      text("Adding balls: OFF",width/2 + 70,10);
+    }
+    text("Speeds:",width/2,30);
+    for (var i = 0; i < balls.length; i++){
+      text(balls[i].speed,width/2,50 + 20*i);
+    }
+    stroke(100);
     line(width/2,0,width/2,height);
   }
   else if (!focused && start == true) {
@@ -122,6 +141,9 @@ function draw() {
     text("Player 2 uses UP arrow and DOWN arrow to move",width/2,height/2 + 160);
     text("Press 1 to toggle AI for player 1",width/2,height/2 + 180);
     text("Press 2 to toggle AI for player 2",width/2,height/2 + 200);
+    text("Press 3 to toggle speed increase",width/2,height/2 + 220);
+    text("Press 4 to toggle ball adding",width/2,height/2 + 240);
+    text("Press 0 to add a ball",width/2,height/2 + 260);
   }
 }
 
@@ -143,40 +165,79 @@ function keyPressed(){
       ai_p2 = true;
     }
   }
+  else if (key == "3") {
+    if(s_increase){
+      s_increase = false;
+    }
+    else {
+      s_increase = true;
+    }
+  }
+  else if (key == "4"){
+    if(b_add){
+      b_add = false;
+    }
+    else {
+      b_add = true;
+    }
+  }
+  else if (key == "0") {
+    addBall();
+  }
 }
 
 function ai(p){
-  if (balls.length == 1 && p == 0){
-    dist = balls[0].x - players[p].x;
-  }
-  else if (balls.length == 1 && p == 1) {
-    dist = width - balls[0].x - players[p].x;
-  }
-  ball_y = balls[0].y;
-  ball_x = balls[0].x;
-  ball_speed = balls[0].speedY;
-  while(true){
-    ball_y += ball_speed;
-    if (ball_y > height || ball_y < 0){
-      ball_speed = -ball_speed;
+  var balls_pos = [];
+  var count = 0;
+  var max_count = 0;
+  var max = 0;
+  for (var i = 0; i < balls.length; i++) {
+    if ((p == 0 && balls[i].speedX < 0) || (p == 1 && balls[i].speedX > 0)) {
+      ball_y = balls[i].y;
+      ball_x = balls[i].x;
+      ball_speed = balls[i].speedY;
+      while(true){
+        ball_y += ball_speed;
+        if ((ball_y + balls[i].d/2) >= height || (ball_y - balls[i].d/2 - players[p].w/2) <= 0){
+          ball_speed = -ball_speed;
+        }
+        ball_x += balls[i].speedX;
+        //console.log(p);
+        if (p == 0 && (ball_x - players[p].x) <= 0 ){
+          break
+        }
+        if (p == 1 && (ball_x + (width - players[p].x) + players[p].w/2) >= width) {
+          //console.log("BROKE");
+          break
+        }
+      }
+      balls_pos.push(ball_y);
     }
-    ball_x += balls[0].speedX;
-    if (ball_x - players[p].w/2 < 0 || ball_x + players[p].w/2 > width) {
-      break
+  }
+  max = height/2;
+  max_count = 0;
+  for (var i = 0; i < balls_pos.length; i++) {
+    count = 0;
+    for (var u = 0; u < balls_pos.length; u++) {
+      if((balls_pos[i] + players[p].h/2) >= balls_pos[u] && (balls_pos[i] - players[p].h/2) <= balls_pos[u]){
+        count += 1;
+      }
+    }
+    if(count >= max_count){
+      max_count = count;
+      max = balls_pos[i];
     }
   }
-  if (players[p].y > ball_y){
+  if ((players[p].y + players[p].speed) >= max && (players[p].y - players[p].speed) >= max){
     players[p].move_up();
   }
-  else if (players[p].y < ball_y) {
+  else if ((players[p].y + players[p].speed) <= max && (players[p].y - players[p].speed) <= max) {
     players[p].move_down();
   }
 }
 
 function addBall(){
-  if((score_1 + score_2) > 0 && (score_1 + score_2)%5 == 0 && balls.length <= 10){
-    balls.push(new Ball(width/2,random(0,height),random(-HALF_PI,HALF_PI)*7/10));
-  }
+  balls.push(new Ball(width/2,random(0,height),random(-HALF_PI,HALF_PI)*7/10));
 }
 
 function windowResized() {

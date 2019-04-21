@@ -7,12 +7,12 @@ function Player(key_up,key_down,x,y){
   this.h = 100;
   this.speed = 14;
   this.move_up = function(){
-    if ((this.y - this.speed - this.h/2) >= 0) {
+    if ((this.y - this.speed) >= 0) {
       this.y -= this.speed
     }
   }
   this.move_down = function(){
-    if ((this.y + this.speed + this.h/2) <= height) {
+    if ((this.y + this.speed) <= height) {
       this.y += this.speed
     }
   }
@@ -40,9 +40,11 @@ function Ball(x,y,direction){
     this.speedX = cos(this.direction)*this.speed;
     this.speedY = sin(this.direction)*this.speed;
   }
-  this.hit = function(pY,pH){
+  this.hit = function(pY,pH,s){
     angleMode(RADIANS);
-    this.speed += 1;
+    if (s){
+      this.speed += 1;
+    }
     this.direction = HALF_PI*7/10 * ((this.y - pY)/(pH/2));
     if(this.x > width/2){
       this.direction = -this.direction + PI;
